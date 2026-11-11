@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="uz" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamoat Transporti Navigatsiya va Kuzatish Portali</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Map Pin Pulse & Animations */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 0.2; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .user-location-pulse {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+
+        .bus-marker {
+            transition: all 1s ease-in-out;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- TOP ANNOUNCEMENT BANNER -->
+    <div id="alertBanner" class="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs md:text-sm text-amber-900 flex items-center justify-between shadow-sm transition-all duration-300">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2 truncate">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-200 text-amber-800">
+                    <i class="fa-solid font-bold fa-triangle-exclamation mr-1"></i> <span data-i18n="alertNotice">Ogohlantirish</span>
+                </span>
+                <span class="truncate font-medium" data-i18n="alertText">Yo'l ta'mirlash ishlari sababli ba'zi marshrutlarda harakat o'zgardi. Bekatlarni qayta tekshiring!</span>
+            </div>
+            <button onclick="document.getElementById('alertBanner').remove()" class="ml-4 text-amber-600 hover:text-amber-800 focus:outline-none">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('mapTab')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                        <i class="fa-solid fa-bus text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-brand-700 to-teal-700 bg-clip-text text-transparent">UzTransport</span>
+                        <span class="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase" data-i18n="subLogo">Jonli Harakat Portali</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs (Desktop) -->
+                <nav class="hidden lg:flex space-x-1">
+                    <button onclick="switchTab('mapTab')" id="nav-mapTab" class="nav-btn active-tab flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-brand-50 text-brand-700 font-bold">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span data-i18n="navMap">Jonli Xarita & GPS</span>
+                    </button>
+                    <button onclick="switchTab('routesTab')" id="nav-routesTab" class="nav-btn text-slate-600 hover:bg-slate-100 flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all">
+                        <i class="fa-solid fa-route"></i>
+                        <span data-i18n="navRoutes">Marshrutlar & Jadvallar</span>
+                    </button>
+                    <button onclick="switchTab('faresTab')" id="nav-faresTab" class="nav-btn text-slate-600 hover:bg-slate-100 flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span data-i18n="navFares">Tariflar & Kalkulyator</span>
+                    </button>
+                    <button onclick="switchTab('lostFoundTab')" id="nav-lostFoundTab" class="nav-btn text-slate-600 hover:bg-slate-100 flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all">
+                        <i class="fa-solid fa-hands-holding-circle"></i>
+                        <span data-i18n="navLost">Yo'qolgan buyumlar</span>
+                    </button>
+                </nav>
+
+                <!-- Language Selector & Auth Trigger -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    
+                    <!-- Language Switcher -->
+                    <div class="relative">
+                        <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2 cursor-pointer">
+                            <option value="uz">🇺🇿 UZ</option>
+                            <option value="ru">🇷🇺 RU</option>
+                            <option value="en">🇬🇧 EN</option>
+                        </select>
+                    </div>
+
+                    <!-- User Account / Login Button -->
+                    <button id="userAuthBtn" onclick="openAuthModal()" class="flex items-center space-x-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <i class="fa-regular fa-user"></i>
+                        <span id="userAuthText" data-i18n="btnAuth">Kirish / Ro'yxatdan o'tish</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Subbar -->
+        <div class="lg:hidden flex justify-around border-t border-slate-100 bg-white py-2 px-1 text-xs">
+            <button onclick="switchTab('mapTab')" id="mobile-nav-mapTab" class="flex flex-col items-center py-1 px-2 text-brand-600 font-semibold">
+                <i class="fa-solid fa-map-location-dot text-base mb-0.5"></i>
+                <span data-i18n="navMapMobile">Xarita</span>
+            </button>
+            <button onclick="switchTab('routesTab')" id="mobile-nav-routesTab" class="flex flex-col items-center py-1 px-2 text-slate-500">
+                <i class="fa-solid fa-route text-base mb-0.5"></i>
+                <span data-i18n="navRoutesMobile">Marshrutlar</span>
+            </button>
+            <button onclick="switchTab('faresTab')" id="mobile-nav-faresTab" class="flex flex-col items-center py-1 px-2 text-slate-500">
+                <i class="fa-solid fa-ticket text-base mb-0.5"></i>
+                <span data-i18n="navFaresMobile">Tariflar</span>
+            </button>
+            <button onclick="switchTab('lostFoundTab')" id="mobile-nav-lostFoundTab" class="flex flex-col items-center py-1 px-2 text-slate-500">
+                <i class="fa-solid fa-box-archive text-base mb-0.5"></i>
+                <span data-i18n="navLostMobile">Yo'qotilgan</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col">
+
+        <!-- PROVINCE & DISTRICT/CITY FILTERING BAR -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div class="flex items-center space-x-2 text-slate-700 font-bold text-sm">
+                <i class="fa-solid fa-map-pin text-brand-600 text-base"></i>
+                <span data-i18n="selectRegionLabel">Hudud va Tumanni tanlang:</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2 flex-1 max-w-2xl">
+                <!-- Region / Province Dropdown -->
+                <div class="flex-1">
+                    <select id="provinceSelect" onchange="onProvinceChange(this.value)" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- District / City Dropdown -->
+                <div class="flex-1">
+                    <select id="districtSelect" onchange="onDistrictChange(this.value)" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: LIVE MAP & ETA DASHBOARD -->
+        <section id="mapTab" class="tab-content flex-1 flex flex-col lg:flex-row gap-4 h-full">
+            
+            <!-- Left Sidebar Controls -->
+            <div class="w-full lg:w-96 flex flex-col gap-4">
+                
+                <!-- Geolocation Card -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-location-crosshairs text-brand-600"></i>
+                            <span data-i18n="myLocationTitle">Mening Joylashuvim</span>
+                        </h3>
+                        <span id="geoStatusBadge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full" data-i18n="geoWaiting">Kutilmoqda</span>
+                    </div>
+                    
+                    <button id="geoBtn" onclick="getUserLocation()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-solid fa-location-arrow"></i>
+                        <span data-i18n="btnGeo">Avtomatik joylashuvni aniqlash</span>
+                    </button>
+                    
+                    <div id="locationDetails" class="mt-3 p-2.5 bg-slate-50 rounded-lg text-xs border border-slate-100 hidden">
+                        <div class="text-slate-500" data-i18n="currentStopLabel">Hozirgi bekat:</div>
+                        <div id="nearestStopName" class="font-bold text-slate-800 text-sm">--</div>
+                        <div class="text-[11px] text-slate-400 mt-1 flex justify-between">
+                            <span><span data-i18n="coordsLabel">Koordinatalar</span>: <span id="userCoords">--</span></span>
+                            <span id="gpsAccuracy" class="text-emerald-600 font-semibold" data-i18n="accuracyLabel">Aniqlik: ±10m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Arriving Vehicles Panel (ETA) -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-clock text-indigo-600"></i>
+                            <span data-i18n="etaTitle">Eng Yaqin Keladigan Transportlar (ETA)</span>
+                        </h3>
+                        <span class="inline-flex items-center text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping mr-1"></span> Live GPS
+                        </span>
+                    </div>
+
+                    <div id="etaList" class="space-y-3 overflow-y-auto max-h-[380px] pr-1">
+                        <!-- ETA Cards JS Dynamic Rendered -->
+                    </div>
+                </div>
+
+                <!-- Transport Filters -->
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2" data-i18n="filterTypeLabel">Transport turlari bo'yicha filter:</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" checked onchange="toggleTransportFilter('bus')" class="rounded text-brand-600 focus:ring-brand-500">
+                            <i class="fa-solid fa-bus text-sky-600"></i> <span data-i18n="filterBus">Avtobus</span>
+                        </label>
+                        <label class="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" checked onchange="toggleTransportFilter('gazel')" class="rounded text-brand-600 focus:ring-brand-500">
+                            <i class="fa-solid fa-van-shuttle text-amber-600"></i> <span data-i18n="filterGazel">Marshrutka</span>
+                        </label>
+                        <label class="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" checked onchange="toggleTransportFilter('express')" class="rounded text-brand-600 focus:ring-brand-500">
+                            <i class="fa-solid fa-bolt text-purple-600"></i> <span data-i18n="filterExpress">Ekspress</span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Interactive Vector Simulation Map Canvas -->
+            <div class="flex-1 bg-slate-900 rounded-2xl border border-slate-800 shadow-lg overflow-hidden flex flex-col relative min-h-[450px]">
+                
+                <!-- Map Header Overlay -->
+                <div class="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+                    <div class="bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs text-white pointer-events-auto flex items-center gap-2">
+                        <span id="activeCityLabel" class="font-bold text-brand-500">Toshkent shahar</span> <span data-i18n="mapSuffix">xaritasi (GPS Jonli)</span>
+                    </div>
+
+                    <div class="flex gap-2 pointer-events-auto">
+                        <button onclick="zoomMap(1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                        <button onclick="zoomMap(-1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-minus text-xs"></i>
+                        </button>
+                        <button onclick="resetMapView()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-lg border border-slate-700 shadow-md">
+                            <i class="fa-solid fa-arrows-to-dot mr-1"></i> <span data-i18n="btnCenter">Markaz</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulation Canvas Area -->
+                <div id="mapViewport" class="w-full h-full relative overflow-hidden bg-slate-950">
+                    <!-- SVG Background Roads Grid -->
+                    <svg id="svgRoads" class="w-full h-full absolute inset-0 opacity-40 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#334155" stroke-width="1"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grid)" />
+                        
+                        <!-- Main Arterial Avenues -->
+                        <path d="M -100 250 Q 400 150 900 350" fill="none" stroke="#475569" stroke-width="8" />
+                        <path d="M 300 -50 Q 350 300 400 600" fill="none" stroke="#475569" stroke-width="8" />
+                        <path d="M 100 450 L 800 100" fill="none" stroke="#334155" stroke-width="5" stroke-dasharray="6,6" />
+                    </svg>
+
+                    <!-- Interactive Dynamic Map Items Container -->
+                    <div id="mapContainer" class="w-full h-full relative transition-transform duration-300 transform scale-100 origin-center">
+                        <!-- User Location Pin -->
+                        <div id="userMarker" class="absolute z-30 transform -translate-x-1/2 -translate-y-1/2 hidden" style="left: 45%; top: 50%;">
+                            <div class="relative flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-full bg-emerald-500/30 user-location-pulse absolute"></div>
+                                <div class="w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[10px]">
+                                    <i class="fa-solid fa-user-large"></i>
+                                </div>
+                            </div>
+                            <div class="bg-slate-900 text-white text-[10px] px-2 py-0.5 rounded shadow border border-slate-700 whitespace-nowrap mt-1 transform -translate-x-1/4" data-i18n="userMarkerLabel">
+                                Siz shu yerdazisiz
+                            </div>
+                        </div>
+
+                        <!-- Bus Stops Markers Dynamic -->
+                        <div id="stopsLayer"></div>
+
+                        <!-- Realtime Moving Vehicles Layer -->
+                        <div id="vehiclesLayer"></div>
+                    </div>
+
+                    <!-- Map Legend Overlay -->
+                    <div class="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700 text-slate-300 p-2.5 rounded-xl text-[11px] space-y-1 z-10 hidden sm:block">
+                        <div class="font-bold text-white text-xs mb-1" data-i18n="legendTitle">Xarita belgilari:</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-sky-500 inline-block"></span> <span data-i18n="legendBus">Avtobus (Jonli GPS)</span></div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> <span data-i18n="legendGazel">Marshrutka (Gazell)</span></div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> <span data-i18n="legendExpress">Ekspress Yo'nalish</span></div>
+                        <div class="flex items-center gap-2"><i class="fa-solid fa-bus-simple text-slate-400"></i> <span data-i18n="legendStop">Bekat</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 2: ROUTES & SCHEDULES CATALOG -->
+        <section id="routesTab" class="tab-content hidden flex-1 flex-col gap-6">
+            
+            <!-- Search & Filter Header -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800" data-i18n="routesTitle">Shahar Marshrutlari va Harakat Jadvallari</h2>
+                    <p class="text-xs text-slate-500 mt-1" data-i18n="routesSub">Barcha avtobus va marshrutkalarning batafsil yo'nalishi va bekatlari ro'yxati</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="routeSearchInput" onkeyup="filterRoutes()" placeholder="Marshrut no yoki bekat..." data-i18n-ph="searchPlaceholder" class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <select id="routeTypeFilter" onchange="filterRoutes()" class="border border-slate-200 rounded-lg px-3 py-2 text-xs bg-slate-50 font-medium focus:ring-brand-500">
+                        <option value="all" data-i18n="optAllTransports">Barcha transportlar</option>
+                        <option value="bus" data-i18n="optOnlyBus">Faqat Avtobuslar</option>
+                        <option value="gazel" data-i18n="optOnlyGazel">Faqat Marshrutkalar</option>
+                        <option value="express" data-i18n="optOnlyExpress">Faqat Ekspress</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Routes Grid -->
+            <div id="routesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Rendered dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 3: FARES & TICKET CALCULATOR -->
+        <section id="faresTab" class="tab-content hidden flex-1 flex-col gap-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Fare Calculator -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-calculator text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800" data-i18n="calcTitle">Yo'l Kirasi Kalkulyatori</h3>
+                                <p class="text-xs text-slate-500" data-i18n="calcSub">Safar narxini oldindan hisoblang</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 text-xs">
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1" data-i18n="calcTypeLabel">Transport Turi:</label>
+                                <select id="calcType" onchange="calculateFare()" class="w-full border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-medium">
+                                    <option value="1700" data-i18n="calcOptBusAtto">Shahar Avtobusi (ATTO)</option>
+                                    <option value="2000" data-i18n="calcOptBusCash">Shahar Avtobusi (Naqd pul)</option>
+                                    <option value="3000" data-i18n="calcOptGazel">Marshrutli Taksi (Gazell)</option>
+                                    <option value="2500" data-i18n="calcOptExpress">Ekspress Yo'nalish</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1" data-i18n="calcPassengersLabel">Yo'lovchilar Soni:</label>
+                                <input type="number" id="calcPassengers" min="1" max="10" value="1" onchange="calculateFare()" onkeyup="calculateFare()" class="w-full border border-slate-200 p-2 rounded-lg bg-slate-50 font-medium">
+                            </div>
+
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1" data-i18n="calcDiscountLabel">Imtiyoz Turi:</label>
+                                <select id="calcDiscount" onchange="calculateFare()" class="w-full border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-medium">
+                                    <option value="0" data-i18n="discountNone">Imtiyozsiz (Oddiy)</option>
+                                    <option value="50" data-i18n="discountStudent">Talaba / O'quvchi (50% Chegirma)</option>
+                                    <option value="100" data-i18n="discountPensioner">Nogironligi bor shaxs / Pensiyadagilar (Bepul)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Price Display -->
+                    <div class="mt-6 p-4 bg-slate-900 rounded-xl text-white">
+                        <div class="text-xs text-slate-400" data-i18n="calcTotalLabel">Jami to'lov miqdori:</div>
+                        <div class="flex items-baseline justify-between mt-1">
+                            <span id="calcTotalResult" class="text-2xl font-bold text-emerald-400">1,700 so'm</span>
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded" data-i18n="attoNote">ATTO chegirmasi bilan</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fare Matrix Tariffs -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-money-check-dollar text-emerald-600"></i>
+                        <span data-i18n="tariffTitle">Rasmiy Jamoat Transporti Tariflari</span>
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Tariff Card 1 -->
+                        <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-bold text-emerald-900 text-sm" data-i18n="t1Name">ATTO Transport Kartasi</span>
+                                    <span class="bg-emerald-200 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="t1Badge">Eng arzon</span>
+                                </div>
+                                <div class="text-2xl font-extrabold text-emerald-700">1,700 <span class="text-xs font-medium text-emerald-900">so'm</span></div>
+                                <p class="text-xs text-slate-600 mt-2" data-i18n="t1Desc">Barcha shahar avtobuslarida elektron to'lov kartasi orqali to'langanda taqdim etiladi.</p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-emerald-200/60 text-[11px] text-emerald-800 font-medium" data-i18n="t1Footer">
+                                <i class="fa-solid fa-circle-check mr-1"></i> 1 soat ichida 2-o'tishga 50% chegirma
+                            </div>
+                        </div>
+
+                        <!-- Tariff Card 2 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-bold text-slate-800 text-sm" data-i18n="t2Name">Naqd Pul / Bank Kartasi</span>
+                                    <span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="t2Badge">Standart</span>
+                                </div>
+                                <div class="text-2xl font-extrabold text-slate-800">2,000 <span class="text-xs font-medium text-slate-500">so'm</span></div>
+                                <p class="text-xs text-slate-600 mt-2" data-i18n="t2Desc">Haydovchiga naqd pul shaklida yoki oddiy bank kartalari (Uzcard/Humo) orqali to'lov.</p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500" data-i18n="t2Footer">
+                                Chegirmali o'tishlar amal qilmaydi
+                            </div>
+                        </div>
+
+                        <!-- Tariff Card 3 -->
+                        <div class="p-4 rounded-xl border border-amber-100 bg-amber-50/50 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-bold text-amber-900 text-sm" data-i18n="t3Name">Marshrutli Taksi (Gazell)</span>
+                                    <span class="bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="t3Badge">Yo'nalishli</span>
+                                </div>
+                                <div class="text-2xl font-extrabold text-amber-700">2,500 - 4,000 <span class="text-xs font-medium text-amber-900">so'm</span></div>
+                                <p class="text-xs text-slate-600 mt-2" data-i18n="t3Desc">Masofaga va yo'nalish turiga qarab belgilangan qat'iy tarif.</p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-amber-200/60 text-[11px] text-amber-800 font-medium" data-i18n="t3Footer">
+                                Naqd pul va Click/Payme QR to'lovi
+                            </div>
+                        </div>
+
+                        <!-- Tariff Card 4 -->
+                        <div class="p-4 rounded-xl border border-purple-100 bg-purple-50/50 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-bold text-purple-900 text-sm" data-i18n="t4Name">Talaba / Maktab Oylik Chiptasi</span>
+                                    <span class="bg-purple-200 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="t4Badge">Imtiyozli</span>
+                                </div>
+                                <div class="text-2xl font-extrabold text-purple-700">85,000 <span class="text-xs font-medium text-purple-900">so'm / oy</span></div>
+                                <p class="text-xs text-slate-600 mt-2" data-i18n="t4Desc">O'quvchi va talabalar uchun cheksiz qatnash huquqini beruvchi maxsus ta'lim tarifi.</p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-purple-200/60 text-[11px] text-purple-800 font-medium" data-i18n="t4Footer">
+                                Rasmiy Hujjat ko'rsatilgan holda
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 4: LOST & FOUND / FEEDBACK -->
+        <section id="lostFoundTab" class="tab-content hidden flex-1 flex-col gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Report Lost Form -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                        <span data-i18n="lostFormTitle">Yo'qolgan buyum haqida e'lon</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4" data-i18n="lostFormSub">Transportda narsangizni qoldirib ketdingizmi? Ariza qoldiring</p>
+
+                    <form onsubmit="submitLostItem(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1" data-i18n="lblItemTitle">Buyum nomi:</label>
+                            <input type="text" id="lostItemTitle" required placeholder="Masalan: Qizil sumka, Hujjatlar..." data-i18n-ph="phItemTitle" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1" data-i18n="lblItemRoute">Transport Yo'nalishi:</label>
+                            <input type="text" id="lostItemRoute" required placeholder="Masalan: 14-avtobus" data-i18n-ph="phItemRoute" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1" data-i18n="lblItemTime">Qoldirilgan sana va vaqt:</label>
+                            <input type="datetime-local" id="lostItemTime" required class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1" data-i18n="lblItemPhone">Aloqa telefon raqamingiz:</label>
+                            <input type="tel" id="lostItemPhone" required placeholder="+998 90 123 45 67" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1" data-i18n="lblItemDesc">Qo'shimcha tafsilotlar:</label>
+                            <textarea id="lostItemDesc" rows="3" placeholder="Buyum rangi, xususiyati..." data-i18n-ph="phItemDesc" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-brand-500"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow transition-all" data-i18n="btnSubmitLost">
+                            E'lonni Yuborish
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lost Items List -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-box-open text-amber-500 mr-2"></i> <span data-i18n="lostListTitle">So'nggi Topilgan va Yo'qotilgan Buyumlar</span></span>
+                        <span class="text-xs text-slate-400 font-normal" data-i18n="lostLiveUpdate">Jonli yangilanadi</span>
+                    </h3>
+
+                    <div id="lostItemsContainer" class="space-y-3 overflow-y-auto max-h-[500px]">
+                        <!-- Dynamic Lost Items JS Render -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-700">UzTransport © 2026</span>
+                <span data-i18n="footerText">• Shahar va viloyatlar jamoat transporti axborot tizimi</span>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" onclick="alert('Tezkor aloqa liniyasi: 1069')" class="hover:text-brand-600" data-i18n="footerHotline">Ishonch telefoni: 1069</a>
+                <a href="#" onclick="switchTab('lostFoundTab')" class="hover:text-brand-600" data-i18n="footerSupport">Qo'llab-quvvatlash</a>
+                <a href="#" onclick="alert('Ilova rasmiy versiyada ishlamoqda')" class="hover:text-brand-600" data-i18n="footerPrivacy">Maxfiylik siyosati</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ROUTE DETAIL MODAL -->
+    <div id="routeDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div id="modalHeader" class="p-4 text-white flex items-center justify-between bg-brand-600">
+                <div class="flex items-center space-x-3">
+                    <span id="modalRouteBadge" class="px-2.5 py-1 bg-white/20 text-white rounded-md font-bold text-base">#--</span>
+                    <div>
+                        <h4 id="modalRouteTitle" class="font-bold text-sm">--</h4>
+                        <p id="modalRouteSub" class="text-[11px] text-white/80">--</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('routeDetailModal')" class="text-white/80 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-4 text-xs">
+                <div class="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]" data-i18n="lblWorkHours">Ish vaqti</span>
+                        <span id="modalHours" class="font-bold text-slate-700">06:00 - 22:30</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]" data-i18n="lblInterval">Oraliq vaqt</span>
+                        <span id="modalInterval" class="font-bold text-slate-700">7-10 min</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]" data-i18n="lblFare">Yo'l kirasi</span>
+                        <span id="modalFare" class="font-bold text-emerald-600">1,700 so'm</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-ol text-brand-600"></i> <span data-i18n="lblStopsSeq">Bekatlar Ketma-ketligi:</span>
+                    </h5>
+                    <div id="modalStopsList" class="relative pl-6 space-y-3 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                        <!-- Dynamic Stops -->
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeModal('routeDetailModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg" data-i18n="btnClose">Yopish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTHENTICATION (LOGIN / REGISTER) MODAL -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Modal Header Tabs -->
+            <div class="flex border-b border-slate-100 bg-slate-50">
+                <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-3 text-center text-xs font-bold border-b-2 border-brand-600 text-brand-600" data-i18n="tabLogin">
+                    Tizimga Kirish
+                </button>
+                <button id="authTabRegister" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700" data-i18n="tabRegister">
+                    Ro'yxatdan O'tish
+                </button>
+                <button onclick="closeModal('authModal')" class="px-4 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <!-- Login Form -->
+                <form id="loginForm" onsubmit="handleAuthSubmit(event, 'login')" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblAuthUser">Telefon raqam yoki Pochta:</label>
+                        <input type="text" required placeholder="+998 90 123 45 67" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblAuthPass">Parol:</label>
+                        <input type="password" required placeholder="••••••••" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <label class="flex items-center space-x-1.5 cursor-pointer">
+                            <input type="checkbox" class="rounded text-brand-600">
+                            <span data-i18n="lblRemember">Eslab qolish</span>
+                        </label>
+                        <a href="#" onclick="alert('Parolni tiklash uchun SMS kod yuborildi.')" class="text-brand-600 font-semibold hover:underline" data-i18n="linkForgotPass">Parolni unutdingizmi?</a>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-md transition-all" data-i18n="btnLoginSubmit">
+                        Kirish
+                    </button>
+                </form>
+
+                <!-- Registration Form -->
+                <form id="registerForm" onsubmit="handleAuthSubmit(event, 'register')" class="space-y-3 text-xs hidden">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblFullName">Ism va Familiyangiz:</label>
+                        <input type="text" required placeholder="Ali Valiyev" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblPhone">Telefon raqam:</label>
+                        <input type="tel" required placeholder="+998 90 123 45 67" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblNewPass">Yangi Parol:</label>
+                        <input type="password" required placeholder="••••••••" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1" data-i18n="lblAttoCard">ATTO Karta raqamingiz (Ixtiyoriy):</label>
+                        <input type="text" placeholder="9643 0000 0000 0000" class="w-full border border-slate-200 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-md transition-all" data-i18n="btnRegSubmit">
+                        Hisob Yaratish
+                    </button>
+                </form>
+
+                <!-- Social Logins -->
+                <div class="mt-5 pt-4 border-t border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 block mb-3" data-i18n="lblOrSocial">Yoki quyidagilar orqali kiring:</span>
+                    <div class="flex justify-center space-x-3">
+                        <button onclick="alert('OneID tizimi orqali kirish simulyatsiyasi')" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5 px-3">
+                            <i class="fa-solid fa-id-card text-blue-600"></i> OneID
+                        </button>
+                        <button onclick="alert('Telegram boti orqali kirish simulyatsiyasi')" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5 px-3">
+                            <i class="fa-brands fa-telegram text-sky-500"></i> Telegram
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // MULTI-LANGUAGE TRANSLATION DICTIONARY
+        const i18n = {
+            uz: {
+                alertNotice: "Ogohlantirish",
+                alertText: "Yo'l ta'mirlash ishlari sababli ba'zi marshrutlarda harakat o'zgardi. Bekatlarni qayta tekshiring!",
+                subLogo: "Jonli Harakat Portali",
+                navMap: "Jonli Xarita & GPS",
+                navRoutes: "Marshrutlar & Jadvallar",
+                navFares: "Tariflar & Kalkulyator",
+                navLost: "Yo'qolgan buyumlar",
+                navMapMobile: "Xarita",
+                navRoutesMobile: "Marshrutlar",
+                navFaresMobile: "Tariflar",
+                navLostMobile: "Yo'qotilgan",
+                btnAuth: "Kirish / Ro'yxatdan o'tish",
+                selectRegionLabel: "Hudud va Tumanni tanlang:",
+                myLocationTitle: "Mening Joylashuvim",
+                geoWaiting: "Kutilmoqda",
+                btnGeo: "Avtomatik joylashuvni aniqlash",
+                currentStopLabel: "Hozirgi bekat:",
+                coordsLabel: "Koordinatalar",
+                accuracyLabel: "Aniqlik: ±10m",
+                etaTitle: "Eng Yaqin Keladigan Transportlar (ETA)",
+                filterTypeLabel: "Transport turlari bo'yicha filter:",
+                filterBus: "Avtobus",
+                filterGazel: "Marshrutka",
+                filterExpress: "Ekspress",
+                mapSuffix: "xaritasi (GPS Jonli)",
+                btnCenter: "Markaz",
+                userMarkerLabel: "Siz shu yerdazisiz",
+                legendTitle: "Xarita belgilari:",
+                legendBus: "Avtobus (Jonli GPS)",
+                legendGazel: "Marshrutka (Gazell)",
+                legendExpress: "Ekspress Yo'nalish",
+                legendStop: "Bekat",
+                routesTitle: "Shahar Marshrutlari va Harakat Jadvallari",
+                routesSub: "Barcha avtobus va marshrutkalarning batafsil yo'nalishi va bekatlari ro'yxati",
+                searchPlaceholder: "Marshrut no yoki bekat...",
+                optAllTransports: "Barcha transportlar",
+                optOnlyBus: "Faqat Avtobuslar",
+                optOnlyGazel: "Faqat Marshrutkalar",
+                optOnlyExpress: "Faqat Ekspress",
+                calcTitle: "Yo'l Kirasi Kalkulyatori",
+                calcSub: "Safar narxini oldindan hisoblang",
+                calcTypeLabel: "Transport Turi:",
+                calcOptBusAtto: "Shahar Avtobusi (ATTO)",
+                calcOptBusCash: "Shahar Avtobusi (Naqd pul)",
+                calcOptGazel: "Marshrutli Taksi (Gazell)",
+                calcOptExpress: "Ekspress Yo'nalish",
+                calcPassengersLabel: "Yo'lovchilar Soni:",
+                calcDiscountLabel: "Imtiyoz Turi:",
+                discountNone: "Imtiyozsiz (Oddiy)",
+                discountStudent: "Talaba / O'quvchi (50% Chegirma)",
+                discountPensioner: "Nogironligi bor shaxs / Pensiyadagilar (Bepul)",
+                calcTotalLabel: "Jami to'lov miqdori:",
+                attoNote: "ATTO chegirmasi bilan",
+                tariffTitle: "Rasmiy Jamoat Transporti Tariflari",
+                t1Name: "ATTO Transport Kartasi",
+                t1Badge: "Eng arzon",
+                t1Desc: "Barcha shahar avtobuslarida elektron to'lov kartasi orqali to'langanda taqdim etiladi.",
+                t1Footer: "<i class='fa-solid fa-circle-check mr-1'></i> 1 soat ichida 2-o'tishga 50% chegirma",
+                t2Name: "Naqd Pul / Bank Kartasi",
+                t2Badge: "Standart",
+                t2Desc: "Haydovchiga naqd pul shaklida yoki oddiy bank kartalari (Uzcard/Humo) orqali to'lov.",
+                t2Footer: "Chegirmali o'tishlar amal qilmaydi",
+                t3Name: "Marshrutli Taksi (Gazell)",
+                t3Badge: "Yo'nalishli",
+                t3Desc: "Masofaga va yo'nalish turiga qarab belgilangan qat'iy tarif.",
+                t3Footer: "Naqd pul va Click/Payme QR to'lovi",
+                t4Name: "Talaba / Maktab Oylik Chiptasi",
+                t4Badge: "Imtiyozli",
+                t4Desc: "O'quvchi va talabalar uchun cheksiz qatnash huquqini beruvchi maxsus ta'lim tarifi.",
+                t4Footer: "Rasmiy Hujjat ko'rsatilgan holda",
+                lostFormTitle: "Yo'qolgan buyum haqida e'lon",
+                lostFormSub: "Transportda narsangizni qoldirib ketdingizmi? Ariza qoldiring",
+                lblItemTitle: "Buyum nomi:",
+                phItemTitle: "Masalan: Qizil sumka, Hujjatlar...",
+                lblItemRoute: "Transport Yo'nalishi:",
+                phItemRoute: "Masalan: 14-avtobus",
+                lblItemTime: "Qoldirilgan sana va vaqt:",
+                lblItemPhone: "Aloqa telefon raqamingiz:",
+                lblItemDesc: "Qo'shimcha tafsilotlar:",
+                phItemDesc: "Buyum rangi, xususiyati...",
+                btnSubmitLost: "E'lonni Yuborish",
+                lostListTitle: "So'nggi Topilgan va Yo'qotilgan Buyumlar",
+                lostLiveUpdate: "Jonli yangilanadi",
+                footerText: "• Shahar va viloyatlar jamoat transporti axborot tizimi",
+                footerHotline: "Ishonch telefoni: 1069",
+                footerSupport: "Qo'llab-quvvatlash",
+                footerPrivacy: "Maxfiylik siyosati",
+                lblWorkHours: "Ish vaqti",
+                lblInterval: "Oraliq vaqt",
+                lblFare: "Yo'l kirasi",
+                lblStopsSeq: "Bekatlar Ketma-ketligi:",
+                btnClose: "Yopish",
+                tabLogin: "Tizimga Kirish",
+                tabRegister: "Ro'yxatdan O'tish",
+                lblAuthUser: "Telefon raqam yoki Pochta:",
+                lblAuthPass: "Parol:",
+                lblRemember: "Eslab qolish",
+                linkForgotPass: "Parolni unutdingizmi?",
+                btnLoginSubmit: "Kirish",
+                lblFullName: "Ism va Familiyangiz:",
+                lblPhone: "Telefon raqam:",
+                lblNewPass: "Yangi Parol:",
+                lblAttoCard: "ATTO Karta raqamingiz (Ixtiyoriy):",
+                btnRegSubmit: "Hisob Yaratish",
+                lblOrSocial: "Yoki quyidagilar orqali kiring:"
+            },
+            ru: {
+                alertNotice: "Preduprejdeniye",
+                alertText: "Dvizheniye na nekotorykh marshrutakh izmenenos' iz-za dorozhnykh rabot. Prover'te ostanovki!",
+                subLogo: "Portal Zhivogo Transporta",
+                navMap: "Zhivaya Karta i GPS",
+                navRoutes: "Marshruty i Raspisaniya",
+                navFares: "Tarify i Kal'kulyator",
+                navLost: "Buro Nakhodok",
+                navMapMobile: "Karta",
+                navRoutesMobile: "Marshruty",
+                navFaresMobile: "Tarify",
+                navLostMobile: "Nakhodki",
+                btnAuth: "Vkhod / Registratsiya",
+                selectRegionLabel: "Vyberite Region i Rayon:",
+                myLocationTitle: "Moye Mestopolozheniye",
+                geoWaiting: "Ozhidaniye",
+                btnGeo: "Avtomaticheskoye opredeleniye",
+                currentStopLabel: "Tekushchaya ostanovka:",
+                coordsLabel: "Koordinaty",
+                accuracyLabel: "Tochnost': ±10m",
+                etaTitle: "Blizhayshiy Transport (ETA)",
+                filterTypeLabel: "Fil'tr po tipam transporta:",
+                filterBus: "Avtobus",
+                filterGazel: "Marshrutka",
+                filterExpress: "Ekspress",
+                mapSuffix: "karta (Zhivoy GPS)",
+                btnCenter: "Tsentr",
+                userMarkerLabel: "Vy zdes'",
+                legendTitle: "Obosnacheniya kartoteki:",
+                legendBus: "Avtobus (Zhivoy GPS)",
+                legendGazel: "Marshrutka (Gazel')",
+                legendExpress: "Ekspress Marshrut",
+                legendStop: "Ostanovka",
+                routesTitle: "Gorodskiye Marshruty i Raspisaniya",
+                routesSub: "Podrobnyy spisok marshrutov i ostanovok dlya vsekhtransportnykh sredstv",
+                searchPlaceholder: "Nomer marshruta ili ostanovka...",
+                optAllTransports: "Vse виды transporta",
+                optOnlyBus: "Tol'ko Avtobusy",
+                optOnlyGazel: "Tol me'sh Marshrutki",
+                optOnlyExpress: "Tol'ko Ekspress",
+                calcTitle: "Kal'kulyator Proyezda",
+                calcSub: "Rasschitayte stoimost' poyezdki zaraneyu",
+                calcTypeLabel: "Tip Transporta:",
+                calcOptBusAtto: "Gorodskoy Avtobus (ATTO)",
+                calcOptBusCash: "Gorodskoy Avtobus (Nalichnyye)",
+                calcOptGazel: "Marshrutnoye Taksi (Gazel')",
+                calcOptExpress: "Ekspress Marshrut",
+                calcPassengersLabel: "Kolichestvo Passazhirov:",
+                calcDiscountLabel: "Tip L'goty:",
+                discountNone: "Bez l'got (Obychnyy)",
+                discountStudent: "Student / Shkol'nik (Skidka 50%)",
+                discountPensioner: "Invalidy / Pensionery (Besplatno)",
+                calcTotalLabel: "Itogovaya summa oplaty:",
+                attoNote: "So skidkoy ATTO",
+                tariffTitle: "Ofitsial'nyye Tarify Gorodskogo Transporta",
+                t1Name: "Transportnaya Karta ATTO",
+                t1Badge: "Samyy deshevyy",
+                t1Desc: "Predostavlyayetsya pri oplate elektronnoy kartoy vo vsekh gorodskikh avtobusakh.",
+                t1Footer: "<i class='fa-solid fa-circle-check mr-1'></i> Skidka 50% na 2-yu peresadku v techeniye 1 chasa",
+                t2Name: "Nalichnyye / Bankovskaya Karta",
+                t2Badge: "Standart",
+                t2Desc: "Oplata voditelyu nalichnymi ili obychnymi bankovskimi kartami (Uzcard/Humo).",
+                t2Footer: "L'gotnyye peresadki ne deystvuyut",
+                t3Name: "Marshrutnoye Taksi (Gazel')",
+                t3Badge: "Marshrutnyy",
+                t3Desc: "Fiksirovannyy tarif v zavisimosti ot rasstoyaniya i tipa marshruta.",
+                t3Footer: "Nalichnyye i oplata cherez Click/Payme QR",
+                t4Name: "Studencheskiy / Shkol'nyy Proyezdnoy",
+                t4Badge: "L'gotnyy",
+                t4Desc: "Spetsial'nyy obuchayushchiy tarif dlya bezlimitnogo proyezda studentov i shkol'nikov.",
+                t4Footer: "Pri pred'yavlenii ofitsial'nogo dokumenta",
+                lostFormTitle: "Ob''yavleniye ob uteryannoy veshchi",
+                lostFormSub: "Zabyli chto-to v transporte? Ostav'te zayavku",
+                lblItemTitle: "Nazvaniye predmeta:",
+                phItemTitle: "Naprimer: Krasnaya sumka, Dokumenty...",
+                lblItemRoute: "Marshrut Transporta:",
+                phItemRoute: "Naprimer: Avtobus №14",
+                lblItemTime: "Data i vremya uteri:",
+                lblItemPhone: "Vash kontaktnyy nomer:",
+                lblItemDesc: "Dopolnitel'nyye detali:",
+                phItemDesc: "Tsvet veshchi, osobennosti...",
+                btnSubmitLost: "Otpravit' Ob''yavleniye",
+                lostListTitle: "Posledniye Naydennyye i Uteryannyye Veshchi",
+                lostLiveUpdate: "Obnovlyayetsya v real'nom vremeni",
+                footerText: "• Informatsionnaya sistema obshchestvennogo transporta gorodov i oblastey",
+                footerHotline: "Goryachaya liniya: 1069",
+                footerSupport: "Podderzhka",
+                footerPrivacy: "Politika konfidentsial'nosti",
+                lblWorkHours: "Vremya raboty",
+                lblInterval: "Interval",
+                lblFare: "Stoimost'",
+                lblStopsSeq: "Posledovatel'nost' ostanovok:",
+                btnClose: "Zakryt'",
+                tabLogin: "Vkhod",
+                tabRegister: "Registratsiya",
+                lblAuthUser: "Nomer telefona ili Email:",
+                lblAuthPass: "Parol':",
+                lblRemember: "Zapomnit' menya",
+                linkForgotPass: "Zabyli parol'?",
+                btnLoginSubmit: "Voyti",
+                lblFullName: "Imya i Familiya:",
+                lblPhone: "Nomer telefona:",
+                lblNewPass: "Novyy Parol':",
+                lblAttoCard: "Nomer karty ATTO (Neobyazatel'no):",
+                btnRegSubmit: "Sozdat' Akkaunt",
+                lblOrSocial: "Ili voydite cherez:"
+            },
+            en: {
+                alertNotice: "Notice",
+                alertText: "Routes have changed on some lines due to road repair works. Please check stops!",
+                subLogo: "Live Public Transit Portal",
+                navMap: "Live Map & GPS",
+                navRoutes: "Routes & Schedules",
+                navFares: "Fares & Calculator",
+                navLost: "Lost & Found",
+                navMapMobile: "Map",
+                navRoutesMobile: "Routes",
+                navFaresMobile: "Fares",
+                navLostMobile: "Lost",
+                btnAuth: "Login / Register",
+                selectRegionLabel: "Select Province & District:",
+                myLocationTitle: "My Location",
+                geoWaiting: "Waiting",
+                btnGeo: "Auto Detect Location",
+                currentStopLabel: "Nearest stop:",
+                coordsLabel: "Coordinates",
+                accuracyLabel: "Accuracy: ±10m",
+                etaTitle: "Next Arriving Vehicles (ETA)",
+                filterTypeLabel: "Filter by transport type:",
+                filterBus: "Bus",
+                filterGazel: "Minibus",
+                filterExpress: "Express",
+                mapSuffix: "map (Live GPS)",
+                btnCenter: "Center",
+                userMarkerLabel: "You are here",
+                legendTitle: "Map Legend:",
+                legendBus: "Bus (Live GPS)",
+                legendGazel: "Minibus (Gazel)",
+                legendExpress: "Express Line",
+                legendStop: "Bus Stop",
+                routesTitle: "City Routes & Schedules",
+                routesSub: "Detailed list of routes and stops for all public transport",
+                searchPlaceholder: "Route no or stop name...",
+                optAllTransports: "All Transports",
+                optOnlyBus: "Buses Only",
+                optOnlyGazel: "Minibuses Only",
+                optOnlyExpress: "Express Only",
+                calcTitle: "Fare Calculator",
+                calcSub: "Calculate estimated trip cost",
+                calcTypeLabel: "Transport Type:",
+                calcOptBusAtto: "City Bus (ATTO Card)",
+                calcOptBusCash: "City Bus (Cash)",
+                calcOptGazel: "Minibus Taxi (Gazel)",
+                calcOptExpress: "Express Line",
+                calcPassengersLabel: "Number of Passengers:",
+                calcDiscountLabel: "Discount Type:",
+                discountNone: "Regular (No discount)",
+                discountStudent: "Student / School (50% Off)",
+                discountPensioner: "Disabled / Pensioner (Free)",
+                calcTotalLabel: "Total Fare Amount:",
+                attoNote: "With ATTO discount",
+                tariffTitle: "Official Public Transport Fares",
+                t1Name: "ATTO Transport Card",
+                t1Badge: "Cheapest",
+                t1Desc: "Available when paying by electronic card on all city buses.",
+                t1Footer: "<i class='fa-solid fa-circle-check mr-1'></i> 50% discount on 2nd transfer within 1 hour",
+                t2Name: "Cash / Bank Card",
+                t2Badge: "Standard",
+                t2Desc: "Payment directly to the driver in cash or standard debit cards.",
+                t2Footer: "Discount transfers do not apply",
+                t3Name: "Route Taxi (Gazel)",
+                t3Badge: "Fixed Route",
+                t3Desc: "Fixed fare based on distance and route type.",
+                t3Footer: "Cash and Click/Payme QR payment",
+                t4Name: "Student / School Monthly Pass",
+                t4Badge: "Discounted",
+                t4Desc: "Special education pass providing unlimited travel for students.",
+                t4Footer: "Upon presentation of official student ID",
+                lostFormTitle: "Report Lost Item",
+                lostFormSub: "Left something on public transport? Submit an inquiry",
+                lblItemTitle: "Item Name:",
+                phItemTitle: "E.g. Red Bag, ID Documents...",
+                lblItemRoute: "Transport Route:",
+                phItemRoute: "E.g. Bus #14",
+                lblItemTime: "Time & Date Lost:",
+                lblItemPhone: "Contact Phone Number:",
+                lblItemDesc: "Additional Details:",
+                phItemDesc: "Item color, specific marks...",
+                btnSubmitLost: "Submit Report",
+                lostListTitle: "Recently Found & Lost Items",
+                lostLiveUpdate: "Live Updated",
+                footerText: "• Public Transit Information System for Cities & Provinces",
+                footerHotline: "Hotline: 1069",
+                footerSupport: "Support",
+                footerPrivacy: "Privacy Policy",
+                lblWorkHours: "Working Hours",
+                lblInterval: "Interval",
+                lblFare: "Fare",
+                lblStopsSeq: "Sequence of Stops:",
+                btnClose: "Close",
+                tabLogin: "Sign In",
+                tabRegister: "Sign Up",
+                lblAuthUser: "Phone number or Email:",
+                lblAuthPass: "Password:",
+                lblRemember: "Remember me",
+                linkForgotPass: "Forgot Password?",
+                btnLoginSubmit: "Login",
+                lblFullName: "Full Name:",
+                lblPhone: "Phone Number:",
+                lblNewPass: "New Password:",
+                lblAttoCard: "ATTO Card Number (Optional):",
+                btnRegSubmit: "Create Account",
+                lblOrSocial: "Or sign in with:"
+            }
+        };
+
+        let currentLang = 'uz';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const dict = i18n[lang];
+
+            // Translate text content elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+
+            // Translate placeholders
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if (dict[key]) {
+                    el.placeholder = dict[key];
+                }
+            });
+
+            // Re-render components with translated dynamic text
+            renderETACards();
+            renderRoutesCatalog(filteredRoutesList());
+            renderLostItems();
+        }
+
+        // PROVINCES AND DISTRICTS DATA HIERARCHY
+        const regionsData = {
+            "Toshkent sh.": {
+                name: { uz: "Toshkent shahar", ru: "g. Tashkent", en: "Tashkent City" },
+                districts: ["Chilonzor t.", "Yunusobod t.", "Mirzo Ulug'bek t.", "Yashnobod t.", "Mirobod t.", "Shayxontohur t.", "Uchtepa t.", "Olmazor t.", "Sergeli t.", "Yangihayot t."]
+            },
+            "Toshkent v.": {
+                name: { uz: "Toshkent viloyati", ru: "Tashkentskaya obl.", en: "Tashkent Region" },
+                districts: ["Chirchiq sh.", "Olmaliq sh.", "Angren sh.", "Bekobod sh.", "Yangiyo'l sh.", "Qibray t.", "Zangiota t."]
+            },
+            "Samarqand v.": {
+                name: { uz: "Samarqand viloyati", ru: "Samarkandskaya obl.", en: "Samarkand Region" },
+                districts: ["Samarqand sh.", "Kattaqo'rg'on sh.", "Pastdarg'om t.", "Jomboy t.", "Bulung'ur t.", "Urgut t.", "Toyloq t."]
+            },
+            "Farg'ona v.": {
+                name: { uz: "Farg'ona viloyati", ru: "Ferganskaya obl.", en: "Fergana Region" },
+                districts: ["Farg'ona sh.", "Qo'qon sh.", "Marg'ilon sh.", "Quvasoy sh.", "Oltiariq t.", "Rishton t."]
+            },
+            "Buxoro v.": {
+                name: { uz: "Buxoro viloyati", ru: "Bukharskaya obl.", en: "Bukhara Region" },
+                districts: ["Buxoro sh.", "Kogon sh.", "G'ijduvon t.", "Jondor t.", "Vobkent t.", "Peshku t."]
+            },
+            "Namangan v.": {
+                name: { uz: "Namangan viloyati", ru: "Namanganskaya obl.", en: "Namangan Region" },
+                districts: ["Namangan sh.", "Chust t.", "Uychi t.", "To'raqo'rg'on t.", "Kosonsoy t.", "Pop t."]
+            },
+            "Andijon v.": {
+                name: { uz: "Andijon viloyati", ru: "Andizhanskaya obl.", en: "Andijan Region" },
+                districts: ["Andijon sh.", "Xonobod sh.", "Asaka t.", "Shahrixon t.", "Marhamat t.", "Buloqboshi t."]
+            },
+            "Xorazm v.": {
+                name: { uz: "Xorazm viloyati", ru: "Khorezmskaya obl.", en: "Khorezm Region" },
+                districts: ["Urganch sh.", "Xiva sh.", "Xonqa t.", "Shovot t.", "Gurlan t.", "Yangiarik t."]
+            }
+        };
+
+        let currentProvince = "Toshkent sh.";
+        let currentDistrict = "Chilonzor t.";
+
+        function initRegionDropdowns() {
+            const provSelect = document.getElementById('provinceSelect');
+            provSelect.innerHTML = '';
+
+            Object.keys(regionsData).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = regionsData[key].name[currentLang] || regionsData[key].name.uz;
+                provSelect.appendChild(opt);
+            });
+
+            provSelect.value = currentProvince;
+            populateDistricts(currentProvince);
+        }
+
+        function populateDistricts(provKey) {
+            const distSelect = document.getElementById('districtSelect');
+            distSelect.innerHTML = '';
+
+            const distList = regionsData[provKey] ? regionsData[provKey].districts : [];
+            distList.forEach(dist => {
+                const opt = document.createElement('option');
+                opt.value = dist;
+                opt.textContent = dist;
+                distSelect.appendChild(opt);
+            });
+
+            currentDistrict = distList[0] || "";
+        }
+
+        function onProvinceChange(provKey) {
+            currentProvince = provKey;
+            populateDistricts(provKey);
+            updateRegionData();
+        }
+
+        function onDistrictChange(distName) {
+            currentDistrict = distName;
+            updateRegionData();
+        }
+
+        function updateRegionData() {
+            const provLabel = regionsData[currentProvince] ? regionsData[currentProvince].name[currentLang] : currentProvince;
+            document.getElementById('activeCityLabel').textContent = `${provLabel} (${currentDistrict})`;
+            
+            // Re-filter routes and simulation markers for selected region
+            renderRoutesCatalog(filteredRoutesList());
+            renderETACards();
+        }
+
+        // MOCK DATA: ROUTES AND STOPS
+        const routesData = [
+            {
+                id: "14",
+                region: "Toshkent sh.",
+                name: "14-Yo'nalish",
+                type: "bus",
+                from: "Toshkent Vokzali",
+                to: "Chilonzor 25-Mavze",
+                fare: "1,700 so'm",
+                hours: "06:00 - 22:30",
+                interval: "6-8 daq",
+                ac: true,
+                accessible: true,
+                occupancy: "O'rtacha",
+                stops: ["Toshkent Vokzali", "Oloy Bozori", "Amir Temur Maydoni", "Paxtakor Metro", "Bunyodkor shoh ko'chasi", "Chilonzor 25-Mavze"]
+            },
+            {
+                id: "95",
+                region: "Toshkent sh.",
+                name: "95-Yo'nalish",
+                type: "gazel",
+                from: "Yunusobod 12-Mavze",
+                to: "Qo'ylik Dehqon Bozori",
+                fare: "3,000 so'm",
+                hours: "06:30 - 21:30",
+                interval: "10 daq",
+                ac: false,
+                accessible: false,
+                occupancy: "Zich / To'la",
+                stops: ["Yunusobod 12", "Shahriston", "Bodomzor", "Kichik Halka Yo'li", "Qo'ylik"]
+            },
+            {
+                id: "28",
+                region: "Toshkent sh.",
+                name: "28-Yo'nalish",
+                type: "bus",
+                from: "Beruniy Metro",
+                to: "Ippodrom Bozori",
+                fare: "1,700 so'm",
+                hours: "05:45 - 23:00",
+                interval: "5-7 daq",
+                ac: true,
+                accessible: true,
+                occupancy: "Bo'sh",
+                stops: ["Beruniy Metro", "TashGU", "Chorsu Bozori", "Algoritm", "Ippodrom Bozori"]
+            },
+            {
+                id: "E-1",
+                region: "Toshkent sh.",
+                name: "Ekspress 1",
+                type: "express",
+                from: "Aeroport",
+                to: "Tashkent City Center",
+                fare: "2,500 so'm",
+                hours: "07:00 - 21:00",
+                interval: "15 daq",
+                ac: true,
+                accessible: true,
+                occupancy: "Bo'sh",
+                stops: ["Aeroport Terminal 2", "Muqimiy Ko'chasi", "Tashkent City", "Oloy Bozori"]
+            },
+            {
+                id: "S-1",
+                region: "Samarqand v.",
+                name: "10-Yo'nalish (Samarqand)",
+                type: "bus",
+                from: "Vokzal",
+                to: "Registon Maydoni",
+                fare: "2,000 so'm",
+                hours: "06:00 - 21:00",
+                interval: "8 daq",
+                ac: true,
+                accessible: true,
+                occupancy: "O'rtacha",
+                stops: ["Samarqand Vokzali", "Dagbitskaya", "Registon", "Siyob Bozori"]
+            },
+            {
+                id: "F-3",
+                region: "Farg'ona v.",
+                name: "7-Yo'nalish (Qo'qon)",
+                type: "gazel",
+                from: "Qo'qon Vokzal",
+                to: "Jome Kompleksi",
+                fare: "2,500 so'm",
+                hours: "06:30 - 20:30",
+                interval: "7 daq",
+                ac: false,
+                accessible: false,
+                occupancy: "Zich",
+                stops: ["Qo'qon Vokzal", "G'ishtko'prik", "Bozor", "Jome Masjidi"]
+            }
+        ];
+
+        // MOCK REALTIME MOVING VEHICLES DATA ON MAP
+        let mapVehicles = [
+            { id: "B14-1", route: "14", region: "Toshkent sh.", type: "bus", label: "Avtobus #14", x: 25, y: 35, speedX: 0.15, speedY: 0.08, etaStop: "Oloy Bozori", etaMin: 3 },
+            { id: "G95-1", route: "95", region: "Toshkent sh.", type: "gazel", label: "Marshrutka #95", x: 65, y: 20, speedX: -0.2, speedY: 0.1, etaStop: "Shahriston", etaMin: 5 },
+            { id: "B28-1", route: "28", region: "Toshkent sh.", type: "bus", label: "Avtobus #28", x: 40, y: 70, speedX: 0.1, speedY: -0.15, etaStop: "Chorsu Bozori", etaMin: 2 },
+            { id: "E1-1", route: "E-1", region: "Toshkent sh.", type: "express", label: "Ekspress E-1", x: 75, y: 60, speedX: -0.12, speedY: -0.12, etaStop: "Aeroport", etaMin: 8 },
+            { id: "S10-1", route: "S-1", region: "Samarqand v.", type: "bus", label: "Avtobus #10", x: 50, y: 50, speedX: 0.1, speedY: 0.1, etaStop: "Registon", etaMin: 4 }
+        ];
+
+        const mapStops = [
+            { name: "Oloy Bozori", x: 30, y: 40 },
+            { name: "Amir Temur Maydoni", x: 45, y: 50 },
+            { name: "Chorsu Bozori", x: 35, y: 65 },
+            { name: "Shahriston", x: 60, y: 25 },
+            { name: "Yunusobod 12", x: 70, y: 15 }
+        ];
+
+        // GLOBAL STATE
+        let activeTab = 'mapTab';
+        let userPos = null;
+        let mapZoomLevel = 1;
+        let activeFilters = { bus: true, gazel: true, express: true };
+        let isLoggedIn = false;
+
+        // INITIALIZATION ON LOAD
+        window.onload = function() {
+            initRegionDropdowns();
+            renderETACards();
+            renderMapStops();
+            renderMapVehicles();
+            renderRoutesCatalog(filteredRoutesList());
+            renderLostItems();
+            startVehicleSimulation();
+        };
+
+        // TAB NAVIGATION SYSTEM
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Desktop active state
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active-tab', 'bg-brand-50', 'text-brand-700', 'font-bold');
+                btn.classList.add('text-slate-600');
+            });
+            const activeNav = document.getElementById('nav-' + tabId);
+            if(activeNav) {
+                activeNav.classList.add('bg-brand-50', 'text-brand-700', 'font-bold');
+            }
+
+            // Mobile active state
+            document.querySelectorAll('[id^="mobile-nav-"]').forEach(btn => {
+                btn.classList.remove('text-brand-600', 'font-semibold');
+                btn.classList.add('text-slate-500');
+            });
+            const mobileNav = document.getElementById('mobile-' + tabId);
+            if(mobileNav) {
+                mobileNav.classList.add('text-brand-600', 'font-semibold');
+            }
+        }
+
+        // GEOLOCATION API HANDLER
+        function getUserLocation() {
+            const btn = document.getElementById('geoBtn');
+            const statusBadge = document.getElementById('geoStatusBadge');
+            const details = document.getElementById('locationDetails');
+            
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
+            statusBadge.textContent = "Qidirilmoqda";
+            statusBadge.className = "text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full";
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(4);
+                        const lng = position.coords.longitude.toFixed(4);
+                        userPos = { lat, lng };
+
+                        document.getElementById('userCoords').textContent = `${lat}, ${lng}`;
+                        document.getElementById('nearestStopName').textContent = "Oloy Bozori bekatiga yaqin (20m)";
+                        details.classList.remove('hidden');
+                        
+                        // Show marker on map simulation
+                        const marker = document.getElementById('userMarker');
+                        marker.classList.remove('hidden');
+                        
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Aniqlandi`;
+                        statusBadge.textContent = "Faol GPS";
+                        statusBadge.className = "text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold";
+                    },
+                    (error) => {
+                        userPos = { lat: 41.3111, lng: 69.2797 };
+                        document.getElementById('userCoords').textContent = `41.3111, 69.2797 (Simulyatsiya)`;
+                        document.getElementById('nearestStopName').textContent = "Amir Temur Maydoni";
+                        details.classList.remove('hidden');
+                        
+                        const marker = document.getElementById('userMarker');
+                        marker.classList.remove('hidden');
+
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-location-arrow"></i> Qayta aniqlash`;
+                        statusBadge.textContent = "Taxminiy";
+                        statusBadge.className = "text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full";
+                    },
+                    { timeout: 7000 }
+                );
+            } else {
+                alert("Geolocation API not supported");
+                btn.disabled = false;
+            }
+        }
+
+        // MAP CANVAS SIMULATION RENDERERS
+        function renderMapStops() {
+            const container = document.getElementById('stopsLayer');
+            container.innerHTML = '';
+            mapStops.forEach(stop => {
+                const el = document.createElement('div');
+                el.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer';
+                el.style.left = stop.x + '%';
+                el.style.top = stop.y + '%';
+                el.innerHTML = `
+                    <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-300 flex items-center justify-center text-[8px] text-white shadow-sm">
+                        <i class="fa-solid fa-bus-simple"></i>
+                    </div>
+                    <div class="hidden group-hover:block absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded shadow whitespace-nowrap z-40">
+                        ${stop.name} Bekati
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function renderMapVehicles() {
+            const container = document.getElementById('vehiclesLayer');
+            container.innerHTML = '';
+
+            mapVehicles.forEach(v => {
+                if(!activeFilters[v.type]) return; // Skip filtered out
+                if(v.region && v.region !== currentProvince) return; // Skip non-selected region
+
+                let colorClass = "bg-sky-500";
+                if(v.type === 'gazel') colorClass = "bg-amber-500";
+                if(v.type === 'express') colorClass = "bg-purple-600";
+
+                const el = document.createElement('div');
+                el.className = `bus-marker absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20`;
+                el.style.left = v.x + '%';
+                el.style.top = v.y + '%';
+                el.onclick = () => alert(`${v.label}\nStatus: Harakatda\nETA: ${v.etaStop} (${v.etaMin} min)`);
+                
+                el.innerHTML = `
+                    <div class="relative flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-full ${colorClass} text-white flex items-center justify-center shadow-lg border border-white text-xs">
+                            <i class="fa-solid fa-bus"></i>
+                        </div>
+                        <div class="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-400 border border-white"></div>
+                    </div>
+                    <div class="bg-slate-900/90 text-white text-[9px] px-1.5 py-0.5 rounded font-bold shadow whitespace-nowrap mt-0.5 text-center">
+                        ${v.label}
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // REALTIME VEHICLE ANIMATION SIMULATOR
+        function startVehicleSimulation() {
+            setInterval(() => {
+                mapVehicles.forEach(v => {
+                    v.x += v.speedX;
+                    v.y += v.speedY;
+
+                    if(v.x > 85 || v.x < 15) v.speedX *= -1;
+                    if(v.y > 85 || v.y < 15) v.speedY *= -1;
+                });
+                renderMapVehicles();
+            }, 1000);
+        }
+
+        // MAP CONTROLS
+        function zoomMap(delta) {
+            mapZoomLevel = Math.max(0.8, Math.min(1.8, mapZoomLevel + delta * 0.2));
+            document.getElementById('mapContainer').style.transform = `scale(${mapZoomLevel})`;
+        }
+        function resetMapView() {
+            mapZoomLevel = 1;
+            document.getElementById('mapContainer').style.transform = `scale(1)`;
+        }
+
+        function toggleTransportFilter(type) {
+            activeFilters[type] = !activeFilters[type];
+            renderMapVehicles();
+            renderETACards();
+        }
+
+        // RENDER ETA CARDS
+        function renderETACards() {
+            const list = document.getElementById('etaList');
+            list.innerHTML = '';
+
+            const filtered = mapVehicles.filter(v => activeFilters[v.type] && (!v.region || v.region === currentProvince));
+
+            if(filtered.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">Tanlangan viloyat/filtr bo'yicha yakin transportlar topilmadi</div>`;
+                return;
+            }
+
+            filtered.forEach(v => {
+                let badgeClass = "bg-sky-100 text-sky-800 border-sky-200";
+                if(v.type === 'gazel') badgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+                if(v.type === 'express') badgeClass = "bg-purple-100 text-purple-800 border-purple-200";
+
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200/80 transition-all cursor-pointer flex items-center justify-between";
+                card.onclick = () => showRouteModal(v.route);
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-700 shadow-sm text-sm">
+                            ${v.route}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-xs">${v.label}</div>
+                            <div class="text-[11px] text-slate-500">Bekat: <span class="font-medium text-slate-700">${v.etaStop}</span></div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-extrabold text-emerald-600">${v.etaMin} daq</div>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded border font-semibold ${badgeClass}">${v.type.toUpperCase()}</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // FILTERED ROUTES LIST HELPER
+        function filteredRoutesList() {
+            const query = (document.getElementById('routeSearchInput')?.value || '').toLowerCase();
+            const type = document.getElementById('routeTypeFilter')?.value || 'all';
+
+            return routesData.filter(r => {
+                const matchesRegion = !r.region || r.region === currentProvince;
+                const matchesQuery = r.name.toLowerCase().includes(query) || 
+                                     r.from.toLowerCase().includes(query) || 
+                                     r.to.toLowerCase().includes(query);
+                const matchesType = type === 'all' || r.type === type;
+                return matchesRegion && matchesQuery && matchesType;
+            });
+        }
+
+        // ROUTES CATALOG RENDERER
+        function renderRoutesCatalog(data) {
+            const grid = document.getElementById('routesGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            if(data.length === 0) {
+                grid.innerHTML = `<div class="col-span-3 text-center py-8 text-slate-400 text-xs">Ushbu region/filtr bo'yicha hech qanday marshrut topilmadi</div>`;
+                return;
+            }
+
+            data.forEach(r => {
+                let badgeColor = "bg-sky-500";
+                if(r.type === 'gazel') badgeColor = "bg-amber-500";
+                if(r.type === 'express') badgeColor = "bg-purple-600";
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-lg ${badgeColor} text-white font-extrabold text-sm shadow-sm">${r.name}</span>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">${r.fare}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">${r.from} ➔ ${r.to}</h4>
+                        <div class="text-xs text-slate-500 space-y-1 mt-3">
+                            <div class="flex justify-between"><span>Ish vaqti:</span> <span class="font-medium text-slate-700">${r.hours}</span></div>
+                            <div class="flex justify-between"><span>Oraliq interval:</span> <span class="font-medium text-slate-700">${r.interval}</span></div>
+                            <div class="flex justify-between"><span>Bandlik:</span> <span class="font-semibold text-slate-700">${r.occupancy}</span></div>
+                        </div>
+
+                        <!-- Amenities -->
+                        <div class="flex items-center space-x-2 mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                            <span class="${r.ac ? 'text-emerald-600 font-medium' : 'text-slate-400 line-through'}">
+                                <i class="fa-solid fa-snowflake mr-0.5"></i> Konditsioner
+                            </span>
+                            <span>•</span>
+                            <span class="${r.accessible ? 'text-emerald-600 font-medium' : 'text-slate-400 line-through'}">
+                                <i class="fa-solid fa-wheelchair mr-0.5"></i> Nogironlar uchun
+                            </span>
+                        </div>
+                    </div>
+
+                    <button onclick="showRouteModal('${r.id}')" class="mt-4 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-eye"></i> Bekatlarni Ko'rish
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // FILTER ROUTES SEARCH
+        function filterRoutes() {
+            renderRoutesCatalog(filteredRoutesList());
+        }
+
+        // SHOW ROUTE DETAIL MODAL
+        function showRouteModal(routeId) {
+            const route = routesData.find(r => r.id === routeId) || routesData[0];
+
+            document.getElementById('modalRouteBadge').textContent = route.name;
+            document.getElementById('modalRouteTitle').textContent = `${route.from} — ${route.to}`;
+            document.getElementById('modalRouteSub').textContent = `${route.type.toUpperCase()} Yo'nalishi (${route.region || 'Toshkent'})`;
+            document.getElementById('modalHours').textContent = route.hours;
+            document.getElementById('modalInterval').textContent = route.interval;
+            document.getElementById('modalFare').textContent = route.fare;
+
+            const stopsContainer = document.getElementById('modalStopsList');
+            stopsContainer.innerHTML = '';
+            route.stops.forEach((stop, index) => {
+                const item = document.createElement('div');
+                item.className = "relative flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-100 text-xs";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-[10px] font-bold">${index + 1}</span>
+                        <span class="font-semibold text-slate-800">${stop}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400">Bekat</span>
+                `;
+                stopsContainer.appendChild(item);
+            });
+
+            document.getElementById('routeDetailModal').classList.remove('hidden');
+        }
+
+        // FARE CALCULATOR LOGIC
+        function calculateFare() {
+            const price = parseInt(document.getElementById('calcType').value);
+            const count = Math.max(1, parseInt(document.getElementById('calcPassengers').value) || 1);
+            const discountPercent = parseInt(document.getElementById('calcDiscount').value);
+
+            let total = price * count;
+            if(discountPercent > 0) {
+                total = total * ((100 - discountPercent) / 100);
+            }
+
+            document.getElementById('calcTotalResult').textContent = total.toLocaleString() + " so'm";
+        }
+
+        // LOST & FOUND MANAGEMENT
+        const lostItemsData = [
+            { title: "Qora charm hamyon va pasport", route: "14-Avtobus", time: "Bugun, 14:30", phone: "+998 90 987 65 43", desc: "Ichida haydovchilik guvohnomasi va ATTO kartasi bor." },
+            { title: "Noutbuk sumkasi (Lenovo)", route: "95-Marshrutka", time: "Kecha, 18:10", phone: "+998 93 111 22 33", desc: "Orqa o'rindiqda qolib ketgan." }
+        ];
+
+        function renderLostItems() {
+            const container = document.getElementById('lostItemsContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            lostItemsData.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3";
+                el.innerHTML = `
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-slate-800 text-sm">${item.title}</span>
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded">${item.route}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">${item.desc}</p>
+                        <span class="text-[10px] text-slate-400 block mt-1"><i class="fa-regular fa-clock"></i> ${item.time}</span>
+                    </div>
+                    <button onclick="alert('Bog\\'lanish uchun raqam: ${item.phone}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-medium whitespace-nowrap">
+                        <i class="fa-solid fa-phone text-[10px] mr-1"></i> Aloqaga chiqish
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function submitLostItem(e) {
+            e.preventDefault();
+            const title = document.getElementById('lostItemTitle').value;
+            const route = document.getElementById('lostItemRoute').value;
+            const phone = document.getElementById('lostItemPhone').value;
+            const desc = document.getElementById('lostItemDesc').value;
+
+            lostItemsData.unshift({
+                title,
+                route,
+                time: "Hozirgina",
+                phone,
+                desc
+            });
+
+            renderLostItems();
+            e.target.reset();
+            alert("E'lon muvaffaqiyatli joylashtirildi!");
+        }
+
+        // AUTHENTICATION MODAL SYSTEM
+        function openAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+        function switchAuthTab(type) {
+            const loginTab = document.getElementById('authTabLogin');
+            const regTab = document.getElementById('authTabRegister');
+            const loginForm = document.getElementById('loginForm');
+            const regForm = document.getElementById('registerForm');
+
+            if(type === 'login') {
+                loginTab.className = "flex-1 py-3 text-center text-xs font-bold border-b-2 border-brand-600 text-brand-600";
+                regTab.className = "flex-1 py-3 text-center text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+            } else {
+                regTab.className = "flex-1 py-3 text-center text-xs font-bold border-b-2 border-brand-600 text-brand-600";
+                loginTab.className = "flex-1 py-3 text-center text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+                regForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+
+        function handleAuthSubmit(e, mode) {
+            e.preventDefault();
+            isLoggedIn = true;
+            closeModal('authModal');
+            document.getElementById('userAuthText').textContent = mode === 'login' ? "Mening Kabinetim" : "Profil";
+            alert(mode === 'login' ? "Tizimga muvaffaqiyatli kirdingiz!" : "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!");
+        }
+    </script>
+</body>
+</html>
